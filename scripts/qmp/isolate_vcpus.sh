@@ -9,13 +9,21 @@
 # Get number of cores
 NCORES=`getconf _NPROCESSORS_ONLN`
 
+# Note the VCPU masks just works (tm) works on a 2-way SMP system
 VCPU0_MASK=`printf '%x' $(( 0x1 << ($NCORES - 2) ))`
 VCPU1_MASK=`printf '%x' $(( 0x2 << ($NCORES - 2) ))`
-SYS_MASK=`printf '%x' $(( ( 1 << ($NCORES - 2)) - 1 ))`
+
+# For 2-way SMP systems we need to special-case the SYS_MASK to just use CPU 0
+# (it is the best we can do in terms of isolation and supporting guest IPI tests)
+if [[ $NCORES -le 2 ]]; then
+    SYS_MASK="1"
+else
+    SYS_MASK=`printf '%x' $(( ( 1 << ($NCORES - 2)) - 1 ))`
+fi
 
 echo "QEMU VCPU threads will be assigned to:"
-echo "CPU0: 0x$VCPU0_MASK"
-echo "CPU1: 0x$VCPU1_MASK"
+echo "vCPU0: 0x$VCPU0_MASK"
+echo "vCPU1: 0x$VCPU1_MASK"
 echo "All other processes and interrupts will be assigned to: 0x$SYS_MASK"
 
 # Assign all interrupts to SYS_MASK
