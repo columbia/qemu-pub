@@ -87,6 +87,7 @@ typedef struct VirtBoardInfo {
     void *fdt;
     int fdt_size;
     uint32_t clock_phandle;
+    uint32_t gic_phandle;
 } VirtBoardInfo;
 
 typedef struct {
@@ -322,12 +323,11 @@ static void fdt_add_cpu_nodes(const VirtBoardInfo *vbi)
     }
 }
 
-static uint32_t fdt_add_gic_node(const VirtBoardInfo *vbi)
+static void fdt_add_gic_node(VirtBoardInfo *vbi)
 {
-    uint32_t gic_phandle;
 
-    gic_phandle = qemu_fdt_alloc_phandle(vbi->fdt);
-    qemu_fdt_setprop_cell(vbi->fdt, "/", "interrupt-parent", gic_phandle);
+    vbi->gic_phandle = qemu_fdt_alloc_phandle(vbi->fdt);
+    qemu_fdt_setprop_cell(vbi->fdt, "/", "interrupt-parent", vbi->gic_phandle);
 
     qemu_fdt_add_subnode(vbi->fdt, "/intc");
     /* 'cortex-a15-gic' means 'GIC v2' */
@@ -340,12 +340,10 @@ static uint32_t fdt_add_gic_node(const VirtBoardInfo *vbi)
                                      2, vbi->memmap[VIRT_GIC_DIST].size,
                                      2, vbi->memmap[VIRT_GIC_CPU].base,
                                      2, vbi->memmap[VIRT_GIC_CPU].size);
-    qemu_fdt_setprop_cell(vbi->fdt, "/intc", "phandle", gic_phandle);
-
-    return gic_phandle;
+    qemu_fdt_setprop_cell(vbi->fdt, "/intc", "phandle", vbi->gic_phandle);
 }
 
-static uint32_t create_gic(const VirtBoardInfo *vbi, qemu_irq *pic)
+static void create_gic(VirtBoardInfo *vbi, qemu_irq *pic)
 {
     /* We create a standalone GIC v2 */
     DeviceState *gicdev;
@@ -394,7 +392,7 @@ static uint32_t create_gic(const VirtBoardInfo *vbi, qemu_irq *pic)
         pic[i] = qdev_get_gpio_in(gicdev, i);
     }
 
-    return fdt_add_gic_node(vbi);
+    fdt_add_gic_node(vbi);
 }
 
 static void create_uart(const VirtBoardInfo *vbi, qemu_irq *pic)
@@ -641,8 +639,7 @@ static void create_pcie_irq_map(const VirtBoardInfo *vbi, uint32_t gic_phandle,
                            0x7           /* PCI irq */);
 }
 
-static void create_pcie(const VirtBoardInfo *vbi, qemu_irq *pic,
-                        uint32_t gic_phandle)
+static void create_pcie(const VirtBoardInfo *vbi, qemu_irq *pic)
 {
     hwaddr base = vbi->memmap[VIRT_PCIE].base;
     hwaddr size = vbi->memmap[VIRT_PCIE].size;
@@ -714,7 +711,7 @@ static void create_pcie(const VirtBoardInfo *vbi, qemu_irq *pic,
                                  2, base_mmio, 2, size_mmio);
 
     qemu_fdt_setprop_cell(vbi->fdt, nodename, "#interrupt-cells", 1);
-    create_pcie_irq_map(vbi, gic_phandle, irq, nodename);
+    create_pcie_irq_map(vbi, vbi->gic_phandle, irq, nodename);
 
     g_free(nodename);
 }
@@ -736,7 +733,6 @@ static void machvirt_init(MachineState *machine)
     MemoryRegion *ram = g_new(MemoryRegion, 1);
     const char *cpu_model = machine->cpu_model;
     VirtBoardInfo *vbi;
-    uint32_t gic_phandle;
     char **cpustr;
 
     if (!cpu_model) {
@@ -813,13 +809,13 @@ static void machvirt_init(MachineState *machine)
 
     create_flash(vbi);
 
-    gic_phandle = create_gic(vbi, pic);
+    create_gic(vbi, pic);
 
     create_uart(vbi, pic);
 
     create_rtc(vbi, pic);
 
-    create_pcie(vbi, pic, gic_phandle);
+    create_pcie(vbi, pic);
 
     /* Create mmio transports, so the user can create virtio backends
      * (which will be automatically plugged in to the transports). If
