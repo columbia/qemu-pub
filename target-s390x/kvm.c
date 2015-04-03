@@ -2140,3 +2140,8 @@ int kvm_arch_fixup_msi_route(struct kvm_irq_routing_entry *route,
     route->u.adapter.adapter_id = pbdev->routes.adapter.adapter_id;
     return 0;
 }
+
+int kvm_arch_msi_data_to_gsi(uint32_t data)
+{
+    abort();
+}
