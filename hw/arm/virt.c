@@ -340,7 +340,11 @@ static void fdt_add_gic_node(VirtBoardInfo *vbi)
                                      2, vbi->memmap[VIRT_GIC_DIST].size,
                                      2, vbi->memmap[VIRT_GIC_CPU].base,
                                      2, vbi->memmap[VIRT_GIC_CPU].size);
+    qemu_fdt_setprop_cell(vbi->fdt, "/intc", "#address-cells", 0x2);
+    qemu_fdt_setprop_cell(vbi->fdt, "/intc", "#size-cells", 0x2);
+    qemu_fdt_setprop(vbi->fdt, "/intc", "ranges", NULL, 0);
     qemu_fdt_setprop_cell(vbi->fdt, "/intc", "phandle", vbi->gic_phandle);
+
 }
 
 static void create_gic(VirtBoardInfo *vbi, qemu_irq *pic)
@@ -604,11 +608,12 @@ static void create_fw_cfg(const VirtBoardInfo *vbi)
     g_free(nodename);
 }
 
+#define PCIE_IRQMAP_LEN 10
 static void create_pcie_irq_map(const VirtBoardInfo *vbi, uint32_t gic_phandle,
                                 int first_irq, const char *nodename)
 {
     int devfn, pin;
-    uint32_t full_irq_map[4 * 4 * 8] = { 0 };
+    uint32_t full_irq_map[4 * 4 * PCIE_IRQMAP_LEN] = { 0 };
     uint32_t *irq_map = full_irq_map;
 
     for (devfn = 0; devfn <= 0x18; devfn += 0x8) {
@@ -619,15 +624,15 @@ static void create_pcie_irq_map(const VirtBoardInfo *vbi, uint32_t gic_phandle,
             int i;
 
             uint32_t map[] = {
-                devfn << 8, 0, 0,                           /* devfn */
-                pin + 1,                                    /* PCI pin */
-                gic_phandle, irq_type, irq_nr, irq_level }; /* GIC irq */
+                devfn << 8, 0, 0,                                 /* devfn */
+                pin + 1,                                          /* PCI pin */
+                gic_phandle, 0, 0, irq_type, irq_nr, irq_level }; /* GIC irq */
 
             /* Convert map to big endian */
-            for (i = 0; i < 8; i++) {
+            for (i = 0; i < PCIE_IRQMAP_LEN; i++) {
                 irq_map[i] = cpu_to_be32(map[i]);
             }
-            irq_map += 8;
+            irq_map += PCIE_IRQMAP_LEN;
         }
     }
 
