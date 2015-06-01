@@ -1,11 +1,11 @@
 #!/usr/bin/python
 ##
-# QEMU Object Model test tools
+# QEMU Object Model Query VCPU Thread PIDs
 #
-# Copyright IBM, Corp. 2011
+# Copyright Columbia University, 2015
 #
 # Authors:
-#  Anthony Liguori   <aliguori@us.ibm.com>
+#  Christoffer Dall <cdall@cs.columbia.edu>
 #
 # This work is licensed under the terms of the GNU GPL, version 2 or later.  See
 # the COPYING file in the top-level directory.
