@@ -102,6 +102,8 @@ typedef struct ARMCPU {
     bool powered_off;
     /* CPU has security extension */
     bool has_el3;
+    /* KVM emulates virtual EL2 for nested virtualization */
+    bool kvm_nested_virt;
 
     /* PSCI conduit used to invoke PSCI methods
      * 0 - disabled, 1 - smc, 2 - hvc

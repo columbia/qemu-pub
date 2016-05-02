@@ -100,6 +100,11 @@ int kvm_arch_init_vcpu(CPUState *cs)
     if (!arm_feature(&cpu->env, ARM_FEATURE_AARCH64)) {
         cpu->kvm_init_features[0] |= 1 << KVM_ARM_VCPU_EL1_32BIT;
     }
+    /* HACK: Should include new Linux headers */
+    #define KVM_ARM_VCPU_NESTED_VIRT 4
+    if (cpu->kvm_nested_virt) {
+        cpu->kvm_init_features[0] |= 1 << KVM_ARM_VCPU_NESTED_VIRT;;
+    }
 
     /* Do KVM_ARM_VCPU_INIT ioctl */
     ret = kvm_arm_vcpu_init(cs);
