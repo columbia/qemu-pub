@@ -75,6 +75,9 @@ struct kvm_regs {
 #define KVM_VGIC_V2_ADDR_TYPE_DIST	0
 #define KVM_VGIC_V2_ADDR_TYPE_CPU	1
 
+#define KVM_VGIC_V2_ADDR_TYPE_VDIST     4
+#define KVM_VGIC_V2_ADDR_TYPE_VCPU      5
+
 #define KVM_VGIC_V2_DIST_SIZE		0x1000
 #define KVM_VGIC_V2_CPU_SIZE		0x2000
 

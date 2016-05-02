@@ -67,6 +67,8 @@ enum {
     VIRT_CPUPERIPHS,
     VIRT_GIC_DIST,
     VIRT_GIC_CPU,
+    VIRT_GIC_VDIST,
+    VIRT_GIC_VCPU,
     VIRT_UART,
     VIRT_MMIO,
     VIRT_RTC,
@@ -130,6 +132,8 @@ static const MemMapEntry a15memmap[] = {
     /* GIC distributor and CPU interfaces sit inside the CPU peripheral space */
     [VIRT_GIC_DIST] =   { 0x08000000, 0x00010000 },
     [VIRT_GIC_CPU] =    { 0x08010000, 0x00010000 },
+    [VIRT_GIC_VDIST] =  { 0x08030000, 0x00010000 },
+    [VIRT_GIC_VCPU] =   { 0x08010000, 0x00010000 },
     [VIRT_GIC_V2M] =    { 0x08020000, 0x00001000 },
     [VIRT_UART] =       { 0x09000000, 0x00001000 },
     [VIRT_RTC] =        { 0x09010000, 0x00001000 },
@@ -343,6 +347,8 @@ static void fdt_add_v2m_gic_node(VirtBoardInfo *vbi)
 
 static void fdt_add_gic_node(VirtBoardInfo *vbi)
 {
+    ARMCPU *armcpu = ARM_CPU(qemu_get_cpu(0));
+
     vbi->gic_phandle = qemu_fdt_alloc_phandle(vbi->fdt);
     qemu_fdt_setprop_cell(vbi->fdt, "/", "interrupt-parent", vbi->gic_phandle);
 
@@ -352,15 +358,35 @@ static void fdt_add_gic_node(VirtBoardInfo *vbi)
                             "arm,cortex-a15-gic");
     qemu_fdt_setprop_cell(vbi->fdt, "/intc", "#interrupt-cells", 3);
     qemu_fdt_setprop(vbi->fdt, "/intc", "interrupt-controller", NULL, 0);
-    qemu_fdt_setprop_sized_cells(vbi->fdt, "/intc", "reg",
-                                     2, vbi->memmap[VIRT_GIC_DIST].base,
-                                     2, vbi->memmap[VIRT_GIC_DIST].size,
-                                     2, vbi->memmap[VIRT_GIC_CPU].base,
-                                     2, vbi->memmap[VIRT_GIC_CPU].size);
+
+    if (!armcpu->kvm_nested_virt) {
+        qemu_fdt_setprop_sized_cells(vbi->fdt, "/intc", "reg",
+                                         2, vbi->memmap[VIRT_GIC_DIST].base,
+                                         2, vbi->memmap[VIRT_GIC_DIST].size,
+                                         2, vbi->memmap[VIRT_GIC_CPU].base,
+                                         2, vbi->memmap[VIRT_GIC_CPU].size);
+    } else {
+        qemu_fdt_setprop_sized_cells(vbi->fdt, "/intc", "reg",
+                                         2, vbi->memmap[VIRT_GIC_DIST].base,
+                                         2, vbi->memmap[VIRT_GIC_DIST].size,
+                                         2, vbi->memmap[VIRT_GIC_CPU].base,
+                                         2, vbi->memmap[VIRT_GIC_CPU].size,
+                                     2, vbi->memmap[VIRT_GIC_VDIST].base,
+                                     2, vbi->memmap[VIRT_GIC_VDIST].size,
+                                     2, vbi->memmap[VIRT_GIC_VCPU].base,
+                                     2, vbi->memmap[VIRT_GIC_VCPU].size);
+    }
+
     qemu_fdt_setprop_cell(vbi->fdt, "/intc", "#address-cells", 0x2);
     qemu_fdt_setprop_cell(vbi->fdt, "/intc", "#size-cells", 0x2);
     qemu_fdt_setprop(vbi->fdt, "/intc", "ranges", NULL, 0);
     qemu_fdt_setprop_cell(vbi->fdt, "/intc", "phandle", vbi->gic_phandle);
+
+    if (armcpu->kvm_nested_virt) {
+        qemu_fdt_setprop_cells(vbi->fdt, "/intc", "interrupts",
+                               GIC_FDT_IRQ_TYPE_PPI, 9,
+                               GIC_FDT_IRQ_FLAGS_LEVEL_HI | 0xf00);
+    }
 
 }
 
