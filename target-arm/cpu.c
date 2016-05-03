@@ -116,7 +116,8 @@ static void arm_cpu_reset(CPUState *s)
         /* Reset into the highest available EL */
         if (arm_feature(env, ARM_FEATURE_EL3)) {
             env->pstate = PSTATE_MODE_EL3h;
-        } else if (arm_feature(env, ARM_FEATURE_EL2)) {
+        } else if (arm_feature(env, ARM_FEATURE_EL2) ||
+                   cpu->kvm_nested_virt) {
             env->pstate = PSTATE_MODE_EL2h;
         } else {
             env->pstate = PSTATE_MODE_EL1h;
