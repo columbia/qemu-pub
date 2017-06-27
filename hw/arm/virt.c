@@ -266,8 +266,14 @@ static void fdt_add_psci_node(const VirtBoardInfo *vbi)
      * to the instruction that should be used to invoke PSCI functions.
      * However, the device tree binding uses 'method' instead, so that is
      * what we should use here.
+     *
+     * Note that we let the guest use smc instead of hvc if it is a
+     * hypervisor itself.
      */
-    qemu_fdt_setprop_string(fdt, "/psci", "method", "hvc");
+    if (!armcpu->kvm_nested_virt)
+        qemu_fdt_setprop_string(fdt, "/psci", "method", "hvc");
+    else
+        qemu_fdt_setprop_string(fdt, "/psci", "method", "smc");
 
     qemu_fdt_setprop_cell(fdt, "/psci", "cpu_suspend", cpu_suspend_fn);
     qemu_fdt_setprop_cell(fdt, "/psci", "cpu_off", cpu_off_fn);
