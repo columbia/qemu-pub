@@ -376,7 +376,7 @@ static void fdt_add_gic_node(VirtBoardInfo *vbi)
                                          2, vbi->memmap[VIRT_GIC_DIST].base,
                                          2, vbi->memmap[VIRT_GIC_DIST].size,
                                          2, vbi->memmap[VIRT_GIC_CPU].base,
-                                         2, vbi->memmap[VIRT_GIC_CPU].size,
+                                         2, 0x1000,
                                      2, vbi->memmap[VIRT_GIC_VDIST].base,
                                      2, vbi->memmap[VIRT_GIC_VDIST].size,
                                      2, vbi->memmap[VIRT_GIC_VCPU].base,
