@@ -308,7 +308,7 @@ static void fdt_add_timer_nodes(const VirtBoardInfo *vbi)
                                GIC_FDT_IRQ_TYPE_PPI, 13, irqflags,
                                GIC_FDT_IRQ_TYPE_PPI, 14, irqflags,
                                GIC_FDT_IRQ_TYPE_PPI, 11, irqflags,
-                               GIC_FDT_IRQ_TYPE_PPI, 10, irqflags);
+                               GIC_FDT_IRQ_TYPE_PPI, 14, irqflags);
 }
 
 static void fdt_add_cpu_nodes(const VirtBoardInfo *vbi)
